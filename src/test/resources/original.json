@@ -1,0 +1,37 @@
+{
+  "clientId": 10,
+  "clientClass": "VIP",
+  "type": 28,
+  "personalData": {
+    "taxCode": "1122334455",
+    "firstName": "Test",
+    "lastName": "Testov",
+    "birthDate": "2000-01-01",
+    "addresses": [
+      {
+        "recordId": 24,
+        "city": "Kyiv",
+        "street": "Povitroflotskiy",
+        "house": 6
+      },
+      {
+        "recordId": 25,
+        "city": "Kyiv",
+        "street": "Dehtyarivska",
+        "house": 28
+      }
+    ],
+    "contacts": [
+      {
+        "id": 1010,
+        "type": 1,
+        "value": "044-111-22-33"
+      },
+      {
+        "id": 1010,
+        "type": 2,
+        "value": "063-111-22-33"
+      }
+    ]
+  }
+}

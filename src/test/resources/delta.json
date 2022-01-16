@@ -1,0 +1,26 @@
+{
+  "clientId": 10,
+  "clientClass": "REGULAR",
+  "type": null,
+  "personalData": {
+    "taxCode": "1122334455",
+    "firstName": null,
+    "lastName": "Ivanov",
+    "birthDate": "1990-01-01",
+    "addresses": [
+      {
+        "recordId": 25,
+        "city": null,
+        "street": "Stecenka",
+        "house": 66
+      },
+      {
+        "recordId": 26,
+        "city": "Kyiv",
+        "street": "Peremohy",
+        "house": 20
+      }
+    ],
+    "contacts": []
+  }
+}

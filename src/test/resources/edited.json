@@ -1,0 +1,43 @@
+{
+  "clientId": 10,
+  "clientClass": "REGULAR",
+  "type": 28,
+  "personalData": {
+    "taxCode": "1122334455",
+    "firstName": "Test",
+    "lastName": "Ivanov",
+    "birthDate": "1990-01-01",
+    "addresses": [
+      {
+        "recordId": 24,
+        "city": "Kyiv",
+        "street": "Povitroflotskiy",
+        "house": 6
+      },
+      {
+        "recordId": 25,
+        "city": "Kyiv",
+        "street": "Stecenka",
+        "house": 66
+      },
+      {
+        "recordId": 26,
+        "city": "Kyiv",
+        "street": "Peremohy",
+        "house": 20
+      }
+    ],
+    "contacts": [
+      {
+        "id": 1010,
+        "type": 1,
+        "value": "044-111-22-33"
+      },
+      {
+        "id": 1010,
+        "type": 2,
+        "value": "063-111-22-33"
+      }
+    ]
+  }
+}
