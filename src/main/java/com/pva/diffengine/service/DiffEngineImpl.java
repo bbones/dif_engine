@@ -3,6 +3,7 @@ package com.pva.diffengine.service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,9 @@ import static org.springframework.util.ClassUtils.isPrimitiveOrWrapper;
 
 @Service
 @Qualifier("diffEngine")
+@Slf4j
 public class DiffEngineImpl implements DiffEngine {
+
     @Autowired
     KeyService keyService;
 
@@ -55,7 +58,7 @@ public class DiffEngineImpl implements DiffEngine {
 
         for(Field f : originalFields) {
             String fieldName = f.getName();
-            // System.out.println(fieldName);
+            log.debug(fieldName);
             String methodName = "get" + fieldName.substring(0,1).toUpperCase() + fieldName.substring(1);
             Object v1 = clazz.getMethod(methodName).invoke(original);
             Object v2 = clazz.getMethod(methodName).invoke(edited);
@@ -98,7 +101,9 @@ public class DiffEngineImpl implements DiffEngine {
             InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
         if (isPrimitiveOrWrapper(paramClass.getComponentType()) || paramClass.getComponentType().equals(String.class)) {
-            if (!v1.equals(v2)) {
+            if (v1.equals(v2)) {
+                return (Object[])Array.newInstance(paramClass.getComponentType(), 0);
+            } else {
                 return (Object[])v2;
             }
         }
@@ -144,7 +149,6 @@ public class DiffEngineImpl implements DiffEngine {
          // New records
         hmEdited.keySet().removeAll(hmOriginal.keySet());
         for(Object newKey : hmEdited.keySet()) {
-            System.out.println(newKey);
             al.add(new ComparisonResult(hmEdited.get(newKey), true));
         }
         return arrayListToArray(paramClass, al);
