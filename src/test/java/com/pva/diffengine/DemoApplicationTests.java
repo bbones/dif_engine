@@ -44,7 +44,8 @@ class DemoApplicationTests {
 							new Contact(1010L, 1, "044-111-22-33"),
 							new Contact(1010L, 2, "063-111-22-33")
 
-						}
+						},
+						new String[] {"3", "5", "7"}
 				)
 		);
 		edited = new Client(10L, "REGULAR", 28,
@@ -58,27 +59,26 @@ class DemoApplicationTests {
 						new Contact[] {
 								new Contact(1010L, 1, "044-111-22-33"),
 								new Contact(1010L, 2, "063-111-22-33")
-						}
+						},
+						new String[] {"3", "5", "9"}
 				)
 		);
 	}
 
 	@Test
-	void compareSpecificationObjects() {
-		diffEngine.setKeyFields("$", new String[] {
+	void compareSpecificationObjects()
+			throws DiffEngine.KeyFieldModified, InvocationTargetException, InstantiationException,
+					IllegalAccessException, NoSuchMethodException {
+		diffEngine.setKeysData("$", ".", new String[] {
 				"$.clientId",
 				"$.personalData.taxCode",
 				"$.personalData.addresses.recordId",
 				"$.personalData.contacts.id"
 		});
 
-		try {
-			Object difference = diffEngine.compare(original, edited);
-			System.out.println("Difference ==============================");
-			System.out.println(difference);
-		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
-		}
+		Object difference = diffEngine.compare(original, edited);
+		System.out.println("Difference ==============================");
+		System.out.println(difference);
 	}
 
 	@Test
@@ -123,6 +123,18 @@ class DemoApplicationTests {
 			System.out.println(fieldName + "->" + v1.getClass().isPrimitive() + "->" + isPrimitiveOrWrapper(v1.getClass()));
 			System.out.println(clazz.getDeclaredField(fieldName).getType().isPrimitive());
 		}
+	}
+
+	@Test
+	void arrayOfPrimitives() throws NoSuchFieldException {
+		Class<?> clazz = PersonalData.class;
+		Class<?> fieldClass = clazz.getDeclaredField("random").getType().getComponentType();
+		System.out.println(isPrimitiveOrWrapper(fieldClass) || fieldClass.equals(String.class));
+
+		Class<?> fieldClass1 = clazz.getDeclaredField("addresses").getType().getComponentType();
+		System.out.println(fieldClass1.getName());
+		System.out.println(isPrimitiveOrWrapper(fieldClass1) || fieldClass1.equals(String.class));
+
 	}
 
 	@Test

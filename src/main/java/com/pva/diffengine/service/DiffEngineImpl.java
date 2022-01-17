@@ -3,6 +3,7 @@ package com.pva.diffengine.service;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.ToString;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -11,14 +12,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
+
+import static org.springframework.util.ClassUtils.isPrimitiveOrWrapper;
 
 @Service
 @Qualifier("diffEngine")
 public class DiffEngineImpl implements DiffEngine {
-    private String[] keyFields;
-    private String prefix;
+    @Autowired
+    KeyService keyService;
 
     @AllArgsConstructor
     @ToString
@@ -28,9 +30,8 @@ public class DiffEngineImpl implements DiffEngine {
     }
 
     @Override
-    public void setKeyFields(String prefix, String[] keyFields) {
-        this.prefix = prefix;
-        this.keyFields = keyFields;
+    public void setKeysData(String prefix, String delimiter, String[] keys) {
+        keyService.setKeysData(prefix, delimiter, keys);
     }
 
     @Override
@@ -40,7 +41,7 @@ public class DiffEngineImpl implements DiffEngine {
             InstantiationException,
             IllegalAccessException, KeyFieldModified {
 
-        return nodeCompare(original, edited, prefix).getDifference();
+        return nodeCompare(original, edited, keyService.getPrefix()).getDifference();
     }
 
     private ComparisonResult nodeCompare(Object original, Object edited, String parentPrefix) throws
@@ -63,7 +64,7 @@ public class DiffEngineImpl implements DiffEngine {
                     "set" + fieldName.substring(0,1).toUpperCase() + fieldName.substring(1),
                     v2.getClass());
 
-            if (isKeyField(parentPrefix + "." + fieldName)) {
+            if (keyService.isKeyField(parentPrefix + keyService.getDelimiter() + fieldName)) {
                 if (! v1.equals(v2)) {
                     throw new KeyFieldModified();
                 }
@@ -78,7 +79,8 @@ public class DiffEngineImpl implements DiffEngine {
                 }
             } else if (v1 instanceof Object[]) {
                 Class<?> paramClass = setter.getParameterTypes()[0];
-                Object[] diff = compareArrays(v1, v2, paramClass, parentPrefix + "." + fieldName);
+                Object[] diff = compareArrays(v1, v2, paramClass,
+                        parentPrefix + keyService.getDelimiter() + fieldName);
                 if (diff != null) {
                     setter.invoke(result, paramClass.cast(diff));
                 }
@@ -95,17 +97,62 @@ public class DiffEngineImpl implements DiffEngine {
             KeyFieldModified,
             InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
 
+        if (isPrimitiveOrWrapper(paramClass.getComponentType()) || paramClass.getComponentType().equals(String.class)) {
+            if (!v1.equals(v2)) {
+                return (Object[])v2;
+            }
+        }
+
+        if (keyService.findKey(parentPrefix) != null) {
+            return compareKeyedArrays(v1, v2, paramClass, parentPrefix);
+        }
+
         Object[] a = (Object[])v1;
         Object[] b = (Object[])v2;
 
         ArrayList<ComparisonResult> al = new ArrayList<>();
         for (int i = 0; i < a.length; i++) {
             ComparisonResult cr = nodeCompare(a[i], b[i], parentPrefix);
-            al.add(cr);
+            if (cr.isChanged()){
+                al.add(cr);
+            }
         }
 
+        return arrayListToArray(paramClass, al);
+    }
+
+    private Object[] compareKeyedArrays(Object v1, Object v2, Class<?> paramClass, String parentPrefix)
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException,
+                    KeyFieldModified, InstantiationException {
+        String keyField = keyService.findKey(parentPrefix);
+
+        Map<Object, Object> hmOriginal = arrayToHashMap(paramClass, keyField, (Object[])v1);
+        Map<Object, Object> hmEdited = arrayToHashMap(paramClass, keyField, (Object[])v2);
+
+        ArrayList<ComparisonResult> al = new ArrayList<>();
+
+        // Existing records
+        for(Map.Entry<Object, Object> original: hmOriginal.entrySet()) {
+            Object edited = hmEdited.get(original.getKey());
+            if (edited != null) {
+                ComparisonResult cr = nodeCompare(original.getValue(), edited, parentPrefix);
+                if (cr.isChanged()) {
+                    al.add(cr);
+                }
+            }
+        }
+         // New records
+        hmEdited.keySet().removeAll(hmOriginal.keySet());
+        for(Object newKey : hmEdited.keySet()) {
+            System.out.println(newKey);
+            al.add(new ComparisonResult(hmEdited.get(newKey), true));
+        }
+        return arrayListToArray(paramClass, al);
+    }
+
+    private Object[] arrayListToArray(Class<?> paramClass, ArrayList<ComparisonResult> al) {
         if (al.size() > 0) {
-            Object[] os = (Object[])Array.newInstance(paramClass.getComponentType(), al.size());
+            Object[] os = (Object[]) Array.newInstance(paramClass.getComponentType(), al.size());
             for (int i = 0; i < al.size(); i++) {
                 os[i] = paramClass.getComponentType().cast(al.get(i).getDifference());
             }
@@ -114,13 +161,22 @@ public class DiffEngineImpl implements DiffEngine {
         return (Object[])Array.newInstance(paramClass.getComponentType(), 0);
     }
 
+    private Map<Object, Object> arrayToHashMap(
+            Class<?> paramClass, String keyField, Object[] array)
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        HashMap<Object, Object> hm = new HashMap<>();
+        String methodName = "get" + keyField.substring(0,1).toUpperCase() + keyField.substring(1);
+        Method getter = paramClass.getComponentType().getMethod(methodName);
+        for (Object el: array) {
+            hm.put(getter.invoke(el), el);
+        }
+        return hm;
+    }
+
     private boolean isComparable(Object obj) {
         return obj instanceof String || obj instanceof Integer || obj instanceof Short || obj instanceof Long
                 || obj instanceof Byte || obj instanceof Character || obj instanceof Boolean
                 || obj instanceof Float || obj instanceof Double || obj instanceof LocalDate;
     }
 
-    private boolean isKeyField(String fieldName) {
-        return Arrays.asList(keyFields).contains(fieldName);
-    }
 }
