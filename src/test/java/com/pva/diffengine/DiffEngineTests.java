@@ -16,6 +16,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.util.ClassUtils.isPrimitiveOrWrapper;
 
@@ -81,15 +82,22 @@ public class DiffEngineTests {
     void compareSpecificationObjects()
             throws DiffEngine.KeyFieldModified, InvocationTargetException, InstantiationException,
             IllegalAccessException, NoSuchMethodException {
-        Object difference = diffEngine.compare(original, edited);
+        Client difference = (Client) diffEngine.compare(original, edited);
         log.debug("difference" + difference.toString());
-
+        assertEquals(difference.getClientId(), 10L);
+        assertEquals(difference.getPersonalData().getAddresses().length, 2);
+        assertEquals(difference.getPersonalData().getContacts().length, 0);
+        assertEquals(difference.getPersonalData().getRandom().length, 3);
     }
 
     @Test
     void compareSameObjects() throws DiffEngine.KeyFieldModified, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        Object difference = diffEngine.compare(original, original);
+        Client difference = (Client) diffEngine.compare(original, original);
         log.debug("difference" + difference.toString());
+        assertEquals(difference.getClientId(), 10L);
+        assertEquals(difference.getPersonalData().getAddresses().length, 0);
+        assertEquals(difference.getPersonalData().getContacts().length, 0);
+        assertEquals(difference.getPersonalData().getRandom().length, 0);
     }
 
     @Test
