@@ -5,6 +5,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class Address {
     @Getter @Setter private Long recordId;
     @Getter @Setter private String city;

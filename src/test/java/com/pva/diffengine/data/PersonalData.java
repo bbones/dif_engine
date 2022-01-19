@@ -7,6 +7,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class PersonalData {
 
     @Getter @Setter private Long taxCode;
